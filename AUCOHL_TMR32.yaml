@@ -1,0 +1,264 @@
+info:
+  name: AUCOHL_TMR32
+  description: General purpose 32-bit Timer and PWM generator
+  repo: https://github.com/shalan/AUCOHL_TMR32.git
+  owner: AUCOHL
+  license: APACHE 2.0
+  author: Mohamed Shalan
+  email: <email>
+  version: 1.0
+  date: 12-01-2024
+  category: digital
+  tags:
+    - timer
+    - pwm
+    - peripheral
+    - motor control
+    - time
+    - periodic
+  bus:
+    - generic
+  type": soft
+  status: n/a
+  qualification: n/a
+  cell_count: 
+    - 1500
+    - 2000
+  width": 0.0
+  height": 0.0
+  technology: n/a
+  clock_freq_mhz: 50
+  digital_supply_voltage: n/a
+  analog_supply_voltage: n/a
+
+# parameters:
+
+ports:
+  - name: tmr_en
+    width: 1
+  - name: tmr_start
+    width: 1
+  - name: pwm0_en
+    width: 1
+  - name: pwm1_en
+    width: 1
+  - name: pwm_dt_en
+    width: 1
+  - name: tmr_reload
+    width: 32
+  - name: cmpx
+    width: 32
+  - name: cmpy
+    width: 32
+  - name: prescaler
+    width: 32
+  - name: tmr_cfg
+    width: 3
+  - name: pwm0_cfg
+    width: 12
+  - name: pwm1_cfg
+    width: 12
+  - name: pwm_dt
+    width: 8
+  - name: tmr
+    width: 32
+  - name: matchx_flag
+    width: 1
+  - name: matchy_flag
+    width: 1
+  - name: timeout_flag
+    width: 1
+
+clock:
+ name: clk
+
+reset:
+ name: rst_n
+ level: 0
+
+external_interface:
+- name: pwm0
+  port: pwm0
+  direction: output
+  width: 1
+- name: pwm1
+  port: pwm1
+  direction: output
+  width: 1
+
+registers:
+- name: TMR
+  size: 32
+  mode: r
+  fifo: no
+  offset: 0
+  bit_access: no
+  read_port: tmr
+  description: The current value of the Timer.
+- name: RELOAD
+  size: 32
+  mode: w
+  fifo: no
+  offset: 4
+  bit_access: no
+  write_port: tmr_reload
+  description: The timer reload value. In up counting it is used as the terminal count. For down counting it is used as the initial count.
+- name: PR
+  size: 32
+  mode: w
+  init: 0
+  fifo: no
+  offset: 8
+  bit_access: no
+  write_port: prescaler
+  description: The Prescaler. The timer counting frequency is $Clock\ freq/(PR + 1)$
+- name: CMPX
+  size: 32
+  mode: w
+  fifo: no
+  offset: 12
+  bit_access: no
+  write_port: cmpx
+  description: Compare Register X.
+- name: CMPY
+  size: 32
+  mode: w
+  fifo: no
+  offset: 16
+  bit_access: no
+  write_port: cmpy
+  description: Compare Register Y.
+- name: CTRL
+  size: 5
+  mode: w
+  fifo: no
+  offset: 20
+  bit_access: no
+  description: Control Register.
+  fields:
+  - name: TE
+    bit_offset: 0
+    bit_width: 1
+    write_port: tmr_en
+    description: Timer enable
+  - name: TS
+    bit_offset: 1
+    bit_width: 1
+    write_port: tmr_start
+    description: Timer re-start; used in the one-shot mode to restart the timer. Write 1 then 0 to re-start the timer.
+  - name: P0E
+    bit_offset: 2
+    bit_width: 1
+    write_port: pwm0_en
+    description: PWM 0 enable
+  - name: P1E
+    bit_offset: 3
+    bit_width: 1
+    write_port: pwm1_en
+    description: PWM 1 enable
+  - name: DTE
+    bit_offset: 4
+    bit_width: 1
+    write_port: pwm_dt_en
+    description: PWM deadtime enable
+- name: CFG
+  size: 3
+  mode: w
+  fifo: no
+  offset: 24
+  bit_access: no
+  write_port: tmr_cfg
+  description: Configuration Register.
+  fields:
+  - name: DIR
+    bit_offset: 0
+    bit_width: 2
+    description: "Count direction; 10: Up, 01: Down, 11: Up/Down"
+  - name: P
+    bit_offset: 2
+    bit_width: 1
+    description: "1: Peiodic, 0: One Shot"
+- name: PWM0CFG
+  size: 12
+  mode: w
+  fifo: no
+  offset: 28
+  bit_access: no
+  write_port: pwm0_cfg
+  description: PWM0 Configuration Register.
+  fields:
+  - name: E0
+    bit_offset: 0
+    bit_width: 2
+    description: "PWM0 action for matching zero. 00: No Action, 01: Low, 10: High, 11: Invert"
+  - name: E1
+    bit_offset: 2
+    bit_width: 2
+    description: "PWM0 action for matching CMPX (going up). 00: No Action, 01: Low, 10: High, 11: Invert"
+  - name: E2
+    bit_offset: 4
+    bit_width: 2
+    description: "PWM0 action for matching CMPY (going up). 00: No Action, 01: Low, 10: High, 11: Invert"
+  - name: E3
+    bit_offset: 6
+    bit_width: 2
+    description: "PWM0 action for matching RELOAD. 00: No Action, 01: Low, 10: High, 11: Invert"
+  - name: E4
+    bit_offset: 8
+    bit_width: 2
+    description: "PWM0 action for being matching CMPY (going down). 00: No Action, 01: Low, 10: High, 11: Invert"
+  - name: E5
+    bit_offset: 10
+    bit_width: 2
+    description: "PWM0 action for being matching CMPX (going down). 00: No Action, 01: Low, 10: High, 11: Invert"
+- name: PWM1CFG
+  size: 16
+  mode: w
+  fifo: no
+  offset: 32
+  bit_access: no
+  write_port: pwm1_cfg
+  description: PWM1 Configuration Register.
+  fields:
+  - name: E0
+    bit_offset: 0
+    bit_width: 2
+    description: "PWM1 action for matching zero. 00: No Action, 01: Low, 10: High, 11: Invert"
+  - name: E1
+    bit_offset: 2
+    bit_width: 2
+    description: "PWM1 action for matching CMPX (going up). 00: No Action, 01: Low, 10: High, 11: Invert"
+  - name: E2
+    bit_offset: 4
+    bit_width: 2
+    description: "PWM1 action for matching CMPY (going up). 00: No Action, 01: Low, 10: High, 11: Invert"
+  - name: E3
+    bit_offset: 6
+    bit_width: 2
+    description: "PWM1 action for matching RELOAD. 00: No Action, 01: Low, 10: High, 11: Invert"
+  - name: E4
+    bit_offset: 8
+    bit_width: 2
+    description: "PWM1 action for being matching CMPY (going down). 00: No Action, 01: Low, 10: High, 11: Invert"
+  - name: E5
+    bit_offset: 10
+    bit_width: 2
+    description: "PWM1 action for being matching CMPX (going down). 00: No Action, 01: Low, 10: High, 11: Invert"
+- name: PWMDT
+  size: 8
+  mode: w
+  fifo: no
+  offset: 36
+  bit_access: no
+  write_port: pwm_dt
+  description: PWM deadtime Register.
+flags:
+- name: TO
+  port: timeout_flag
+  description: Timeout; TMR matches 0 (down clounting) or RELOAD (up counting).
+- name: MX
+  port: matchx_flag
+  description: TMR matches CMPX register.
+- name: MY
+  port: matchy_flag
+  description: TMR matches CMPY register.
