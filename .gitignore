@@ -51,7 +51,7 @@ Module.symvers
 Mkfile.old
 dkms.conf
 
-.SD_Store
+.DS_Store
 *.out
 *.vvp
 IP_Utilities/
