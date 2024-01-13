@@ -5,7 +5,7 @@ info:
   owner: AUCOHL
   license: APACHE 2.0
   author: Mohamed Shalan
-  email: <email>
+  email: mshalan@aucegypt.edu
   version: 1.0
   date: 12-01-2024
   category: digital
@@ -31,43 +31,47 @@ info:
   digital_supply_voltage: n/a
   analog_supply_voltage: n/a
 
-# parameters:
+parameters:
+  - name: PRW
+    default: 16
 
 ports:
-  - name: tmr_en
-    width: 1
-  - name: tmr_start
-    width: 1
-  - name: pwm0_en
-    width: 1
-  - name: pwm1_en
-    width: 1
-  - name: pwm_dt_en
-    width: 1
-  - name: tmr_reload
-    width: 32
-  - name: cmpx
-    width: 32
-  - name: cmpy
-    width: 32
-  - name: prescaler
-    width: 32
-  - name: tmr_cfg
-    width: 3
-  - name: pwm0_cfg
-    width: 12
-  - name: pwm1_cfg
-    width: 12
-  - name: pwm_dt
-    width: 8
-  - name: tmr
-    width: 32
-  - name: matchx_flag
-    width: 1
-  - name: matchy_flag
-    width: 1
-  - name: timeout_flag
-    width: 1
+ - name: tmr_en
+   width: 1
+ - name: tmr_start
+   width: 1
+ - name: pwm0_en
+   width: 1
+ - name: pwm1_en
+   width: 1
+ - name: tmr_reload
+   width: 32
+ - name: cmpx
+   width: 32
+ - name: cmpy
+   width: 32
+ - name: prescaler
+   width: PRW+1
+ - name: tmr_cfg
+   width: 3
+ - name: pwm0_cfg
+   width: 12
+ - name: pwm1_cfg
+   width: 12
+ - name: pwm_dt
+   width: 8
+ - name: pwm_fault_clr
+   width: 16
+ - name: pwm_dt_en
+   width: 1
+ - name: tmr
+   width: 32
+ - name: matchx_flag
+   width: 1
+ - name: matchy_flag
+   width: 1
+ - name: timeout_flag
+   width: 1
 
 clock:
  name: clk
@@ -85,6 +89,11 @@ external_interface:
   port: pwm1
   direction: output
   width: 1
+- name: pwm_fault
+  port: pwm_fault
+  direction: input
+  width: 1
+
 
 registers:
 - name: TMR
@@ -104,7 +113,7 @@ registers:
   write_port: tmr_reload
   description: The timer reload value. In up counting it is used as the terminal count. For down counting it is used as the initial count.
 - name: PR
-  size: 32
+  size: PRW
   mode: w
   init: 0
   fifo: no

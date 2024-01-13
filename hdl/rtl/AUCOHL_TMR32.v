@@ -1,8 +1,12 @@
 `include "aucohl_rtl.vh"
-`include "./IP_Utilities/rtl/aucohl_lib.vh"
+`include "aucohl_lib.v"
 
 
-module AUCOHL_TMR32 (
+module AUCOHL_TMR32 #(parameter PRW = 16,
+                                PWM_FAULT_CLR_C0 = 16'hA539,
+                                PWM_FAULT_CLR_C1 = 16'hA953 
+)
+(
     input   wire            clk,
     input   wire            rst_n,
     input   wire            tmr_en,
@@ -12,12 +16,14 @@ module AUCOHL_TMR32 (
     input   wire [31:0]     tmr_reload,
     input   wire [31:0]     cmpx,
     input   wire [31:0]     cmpy,
-    input   wire [31:0]     prescaler,
+    input   wire [PRW-1:0]  prescaler,
     input   wire [ 2:0]     tmr_cfg,     // [2]: Periodic/OneShot; [1:0]: 10: Up, 01: Down, 11: Up/Down
     input   wire [11:0]     pwm0_cfg,
     input   wire [11:0]     pwm1_cfg,
     input   wire [ 7:0]     pwm_dt,
+    input   wire [15:0]     pwm_fault_clr,
     input   wire            pwm_dt_en,
+    input   wire            pwm_fault,
     output  wire [31:0]     tmr,
     output  wire            matchx_flag,
     output  wire            matchy_flag,
@@ -26,17 +32,18 @@ module AUCOHL_TMR32 (
     output  wire            pwm1
 );
 
-    wire [1:0]  tmr_mode        = tmr_cfg[1:0];
-    wire        tmr_periodic    = tmr_cfg[2];
+    wire [1:0]      tmr_mode        = tmr_cfg[1:0];
+    wire            tmr_periodic    = tmr_cfg[2];
 
-    reg [31:0]  tmr_reg;
-    reg [31:0]  pr_reg;
+    reg [31:0]      tmr_reg;
+    reg [PRW-1:0]   pr_reg;
 
-    wire        tmr_clr;
+    wire            tmr_clr;
 
-    wire        tmr_en_pulse = tmr_clr;
-    reg         tmr_run;
+    wire            tmr_en_pulse = tmr_clr;
+    reg             tmr_run;
 
+    reg             fault_reg;
 
     aucohl_ped TMREN_PE (
         .clk(clk),
@@ -52,14 +59,13 @@ module AUCOHL_TMR32 (
         else
             pr_reg <= prescaler ;
 
-
     reg         tmr_dir;        // 1: Up, 0: Down
-    wire        tmr_eq_reload       = (tmr == tmr_reload);
-    wire        tmr_eq_zero         = (tmr == 0);
-    wire        tmr_eq_reload_m_1   = (tmr == (tmr_reload - 1));
-    wire        tmr_eq_one          = (tmr == 1);
-    wire        tmr_eq_cmpx         = (tmr == cmpx);
-    wire        tmr_eq_cmpy         = (tmr == cmpy);
+    wire        tmr_eq_reload       =   (tmr == tmr_reload);
+    wire        tmr_eq_zero         =   (tmr == 0);
+    wire        tmr_eq_reload_m_1   =   (tmr == (tmr_reload - 1));
+    wire        tmr_eq_one          =   (tmr == 1);
+    wire        tmr_eq_cmpx         =   (tmr == cmpx);
+    wire        tmr_eq_cmpy         =   (tmr == cmpy);
 
     `SYNC_BLOCK(clk, rst_n, tmr_run, 0)
         if(tmr_en_pulse)
@@ -132,7 +138,7 @@ module AUCOHL_TMR32 (
             else
                 tmr_dir <= 1'b1;
 
-    // PWM
+    // PWM Generator
     function pwm_action(input [1:0] action, input sig);
         case (action)
             2'b00: pwm_action = sig;
@@ -171,11 +177,17 @@ module AUCOHL_TMR32 (
 
     `SYNC_BLOCK(clk, rst_n, pwm0_reg, 0)
         if(pwm0_en & tick)
-            pwm0_reg <= pwm0_reg_next;
+            if(pwm_fault)
+                pwm0_reg <= 0;
+            else
+                pwm0_reg <= pwm0_reg_next;
 
     `SYNC_BLOCK(clk, rst_n, pwm1_reg, 0)
         if(pwm1_en & tick)
-            pwm1_reg <= pwm1_reg_next;
+            if(pwm_fault)
+                pwm1_reg <= 0;
+            else
+                pwm1_reg <= pwm1_reg_next;
 
 
     // Dead time insertion
@@ -192,14 +204,31 @@ module AUCOHL_TMR32 (
         if(tick)
             if(dly_cntr == 0)
                 pwm0_delayed <= pwm0_reg;
+
+    reg pwm0_w_dt, pwm1_w_dt;
+    `SYNC_BLOCK(clk, rst_n, pwm0_w_dt, 0)
+        pwm0_w_dt = pwm_dt_en ? (pwm0_delayed & pwm0_reg) : pwm0_reg;
+
+    `SYNC_BLOCK(clk, rst_n, pwm1_w_dt, 0)
+        pwm1_w_dt = pwm_dt_en ? (~pwm0_delayed & ~pwm0_reg) : pwm1_reg;
     
+    // PWM Fault Handeling
+    reg fault_clr_reg;
+    `SYNC_BLOCK(clk, rst_n, fault_clr_reg, 0)
+        if(pwm_fault_clr == PWM_FAULT_CLR_C0)
+            fault_clr_reg <= 1;
+        else if(pwm_fault_clr == PWM_FAULT_CLR_C1)
+            fault_clr_reg <= 0;
+    `SYNC_BLOCK(clk, rst_n, fault_reg, 0)
+        if(pwm_fault)
+            fault_reg <= 1;
+        else if( fault_clr_reg & (pwm_fault_clr == PWM_FAULT_CLR_C1) )
+            fault_reg <= 0;
+            
     // Connect the outputs
-    wire pwm0_xor = (pwm0_delayed ^ pwm0_reg);
-    wire pwm1_xor = (pwm0_delayed ^ ~pwm0_reg);
-    
     assign  tmr             =   tmr_reg;
-    assign  pwm0            =   pwm_dt_en ? (pwm0_delayed & pwm0_reg) : pwm0_reg;
-    assign  pwm1            =   pwm_dt_en ? (~pwm0_delayed & ~pwm0_reg) : pwm1_reg;
+    assign  pwm0            =   pwm0_w_dt;
+    assign  pwm1            =   pwm1_w_dt;
     assign  matchx_flag     =   tmr_eq_cmpx;
     assign  matchy_flag     =   tmr_eq_cmpy;
     assign  timeout_flag    =   tmr_dir ? tmr_eq_reload : tmr_eq_zero;
