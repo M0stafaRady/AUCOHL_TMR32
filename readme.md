@@ -5,7 +5,8 @@ A 32-bit timer and PWM generator with the following features:
 - Up Counting, Down Counting and Up/Down Counting
 - One-shot and Periodic
 - Two independent PWM channels with two compare registers
-- Configurable PWM dead time/band
+- Configurable PWM dead time/band to generate PWM signals such as those required by a half-H bridge driver
+- Fault handeling
 
 ## Registers
 
@@ -59,7 +60,7 @@ Compare Register Y.
 ### CTRL Register [Offset: 0x14, mode: w]
 
 Control Register.
-<img src="https://svg.wavedrom.com/{reg:[{name:'TE', bits:1},{name:'TS', bits:1},{name:'P0E', bits:1},{name:'P1E', bits:1},{name:'DTE', bits:1},{bits: 27}], config: {lanes: 2, hflip: true}} "/>
+<img src="https://svg.wavedrom.com/{reg:[{name:'TE', bits:1},{name:'TS', bits:1},{name:'P0E', bits:1},{name:'P1E', bits:1},{name:'DTE', bits:1},{name:'PI0', bits:1},{name:'PI1', bits:1},{bits: 25}], config: {lanes: 2, hflip: true}} "/>
 
 |bit|field name|width|description|
 |---|---|---|---|
@@ -68,6 +69,8 @@ Control Register.
 |2|P0E|1|PWM 0 enable|
 |3|P1E|1|PWM 1 enable|
 |4|DTE|1|PWM deadtime enable|
+|5|PI0|1|Invert PWM0 output|
+|6|PI1|1|Invert PWM1 output|
 
 
 ### CFG Register [Offset: 0x18, mode: w]
