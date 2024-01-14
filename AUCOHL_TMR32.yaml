@@ -51,9 +51,13 @@ ports:
  - name: cmpy
    width: 32
  - name: prescaler
-   width: PRW+1
+   width: PRW 
  - name: tmr_cfg
    width: 3
+ - name: pwm0_inv
+   width: 1
+ - name: pwm1_inv
+   width: 1   
  - name: pwm0_cfg
    width: 12
  - name: pwm1_cfg
@@ -170,6 +174,17 @@ registers:
     bit_width: 1
     write_port: pwm_dt_en
     description: PWM deadtime enable
+  - name: PI0
+    bit_offset: 5
+    bit_width: 1
+    write_port: pwm0_inv
+    description: Invert PWM0 output. 
+  - name: PI1
+    bit_offset: 6
+    bit_width: 1
+    write_port: pwm1_inv
+    description: Invert PWM1 output. 
+  
 - name: CFG
   size: 3
   mode: w

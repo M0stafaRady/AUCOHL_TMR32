@@ -9,6 +9,7 @@ module AUCOHL_TMR32 #(parameter PRW = 16,
 (
     input   wire            clk,
     input   wire            rst_n,
+
     input   wire            tmr_en,
     input   wire            tmr_start,
     input   wire            pwm0_en,
@@ -20,16 +21,21 @@ module AUCOHL_TMR32 #(parameter PRW = 16,
     input   wire [ 2:0]     tmr_cfg,     // [2]: Periodic/OneShot; [1:0]: 10: Up, 01: Down, 11: Up/Down
     input   wire [11:0]     pwm0_cfg,
     input   wire [11:0]     pwm1_cfg,
+    input   wire            pwm0_inv,
+    input   wire            pwm1_inv,
     input   wire [ 7:0]     pwm_dt,
     input   wire [15:0]     pwm_fault_clr,
     input   wire            pwm_dt_en,
-    input   wire            pwm_fault,
+
     output  wire [31:0]     tmr,
     output  wire            matchx_flag,
     output  wire            matchy_flag,
     output  wire            timeout_flag,
+    
+    input   wire            pwm_fault,
     output  wire            pwm0,
-    output  wire            pwm1
+    output  wire            pwm1,
+
 );
 
     wire [1:0]      tmr_mode        = tmr_cfg[1:0];
@@ -227,8 +233,8 @@ module AUCOHL_TMR32 #(parameter PRW = 16,
             
     // Connect the outputs
     assign  tmr             =   tmr_reg;
-    assign  pwm0            =   pwm0_w_dt;
-    assign  pwm1            =   pwm1_w_dt;
+    assign  pwm0            =   pwm0_w_dt ^ pmw0_inv;
+    assign  pwm1            =   pwm1_w_dt ^ pmw1_inv;
     assign  matchx_flag     =   tmr_eq_cmpx;
     assign  matchy_flag     =   tmr_eq_cmpy;
     assign  timeout_flag    =   tmr_dir ? tmr_eq_reload : tmr_eq_zero;
