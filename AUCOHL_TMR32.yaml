@@ -119,7 +119,7 @@ registers:
 - name: PR
   size: PRW
   mode: w
-  init: 0
+  init: "'h0"
   fifo: no
   offset: 8
   bit_access: no
