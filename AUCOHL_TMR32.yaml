@@ -98,7 +98,6 @@ external_interface:
   direction: input
   width: 1
 
-
 registers:
 - name: TMR
   size: 32
@@ -276,6 +275,7 @@ registers:
   bit_access: no
   write_port: pwm_dt
   description: PWM deadtime Register.
+
 flags:
 - name: TO
   port: timeout_flag
