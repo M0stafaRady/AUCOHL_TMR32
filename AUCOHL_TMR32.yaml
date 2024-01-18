@@ -34,48 +34,90 @@ info:
 parameters:
   - name: PRW
     default: 16
+    description:
 
 ports:
  - name: tmr_en
    width: 1
+   direction: input
+   description: 
  - name: tmr_start
    width: 1
+   direction: input
+   description: 
  - name: pwm0_en
    width: 1
+   direction: input
+   description: 
  - name: pwm1_en
    width: 1
+   direction: input
+   description: 
  - name: tmr_reload
    width: 32
+   direction: input
+   description: 
  - name: cmpx
    width: 32
+   direction: input
+   description: 
  - name: cmpy
    width: 32
+   direction: input
+   description: 
  - name: prescaler
-   width: PRW 
+   width: PRW
+   direction: input
+   description: 
  - name: tmr_cfg
    width: 3
- - name: pwm0_inv
-   width: 1
- - name: pwm1_inv
-   width: 1   
+   direction: input
+   description: 
  - name: pwm0_cfg
    width: 12
+   direction: input
+   description: 
  - name: pwm1_cfg
    width: 12
+   direction: input
+   description: 
+ - name: pwm0_inv
+   width: 1
+   direction: input
+   description: 
+ - name: pwm1_inv
+   width: 1
+   direction: input
+   description: 
  - name: pwm_dt
    width: 8
+   direction: input
+   description: 
  - name: pwm_fault_clr
    width: 16
+   direction: input
+   description: 
  - name: pwm_dt_en
    width: 1
+   direction: input
+   description: 
  - name: tmr
    width: 32
+   direction: output
+   description: 
  - name: matchx_flag
    width: 1
+   direction: output
+   description: 
  - name: matchy_flag
    width: 1
+   direction: output
+   description: 
  - name: timeout_flag
    width: 1
+   direction: output
+   description: 
+
 
 clock:
  name: clk
@@ -89,14 +131,17 @@ external_interface:
   port: pwm0
   direction: output
   width: 1
+  description:
 - name: pwm1
   port: pwm1
   direction: output
   width: 1
+  description:
 - name: pwm_fault
   port: pwm_fault
   direction: input
   width: 1
+  description:
 
 registers:
 - name: TMR
@@ -141,7 +186,7 @@ registers:
   write_port: cmpy
   description: Compare Register Y.
 - name: CTRL
-  size: 5
+  size: 7
   mode: w
   fifo: no
   offset: 20
