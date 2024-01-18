@@ -22,40 +22,40 @@
 `timescale			1ns/1ps
 `default_nettype	none
 
-`define				APB_AW			16
+`define				AHBL_AW			16
 
-`include			"apb_wrapper.vh"
+`include			"ahbl_wrapper.vh"
 
-module AUCOHL_TMR32_APB#( 
+module AUCOHL_TMR32_AHBL#( 
 	parameter	
 				PRW = 16
 ) (
-	`APB_SLAVE_PORTS,
+	`AHBL_SLAVE_PORTS,
 	output	[0:0]	pwm0,
 	output	[0:0]	pwm1,
 	input	[0:0]	pwm_fault
 );
 
-	localparam	TMR_REG_OFFSET = `APB_AW'd0;
-	localparam	RELOAD_REG_OFFSET = `APB_AW'd4;
-	localparam	PR_REG_OFFSET = `APB_AW'd8;
-	localparam	CMPX_REG_OFFSET = `APB_AW'd12;
-	localparam	CMPY_REG_OFFSET = `APB_AW'd16;
-	localparam	CTRL_REG_OFFSET = `APB_AW'd20;
-	localparam	CFG_REG_OFFSET = `APB_AW'd24;
-	localparam	PWM0CFG_REG_OFFSET = `APB_AW'd28;
-	localparam	PWM1CFG_REG_OFFSET = `APB_AW'd32;
-	localparam	PWMDT_REG_OFFSET = `APB_AW'd36;
-	localparam	IM_REG_OFFSET = `APB_AW'd3840;
-	localparam	MIS_REG_OFFSET = `APB_AW'd3844;
-	localparam	RIS_REG_OFFSET = `APB_AW'd3848;
-	localparam	IC_REG_OFFSET = `APB_AW'd3852;
+	localparam	TMR_REG_OFFSET = `AHBL_AW'd0;
+	localparam	RELOAD_REG_OFFSET = `AHBL_AW'd4;
+	localparam	PR_REG_OFFSET = `AHBL_AW'd8;
+	localparam	CMPX_REG_OFFSET = `AHBL_AW'd12;
+	localparam	CMPY_REG_OFFSET = `AHBL_AW'd16;
+	localparam	CTRL_REG_OFFSET = `AHBL_AW'd20;
+	localparam	CFG_REG_OFFSET = `AHBL_AW'd24;
+	localparam	PWM0CFG_REG_OFFSET = `AHBL_AW'd28;
+	localparam	PWM1CFG_REG_OFFSET = `AHBL_AW'd32;
+	localparam	PWMDT_REG_OFFSET = `AHBL_AW'd36;
+	localparam	IM_REG_OFFSET = `AHBL_AW'd3840;
+	localparam	MIS_REG_OFFSET = `AHBL_AW'd3844;
+	localparam	RIS_REG_OFFSET = `AHBL_AW'd3848;
+	localparam	IC_REG_OFFSET = `AHBL_AW'd3852;
 
-	wire		clk = PCLK;
-	wire		rst_n = PRESETn;
+	wire		clk = HCLK;
+	wire		rst_n = HRESETn;
 
 
-	`APB_CTRL_SIGNALS
+	`AHBL_CTRL_SIGNALS
 
 	wire [1-1:0]	tmr_en;
 	wire [1-1:0]	tmr_start;
@@ -66,10 +66,10 @@ module AUCOHL_TMR32_APB#(
 	wire [32-1:0]	cmpy;
 	wire [PRW-1:0]	prescaler;
 	wire [3-1:0]	tmr_cfg;
-	wire [12-1:0]	pwm0_cfg;
-	wire [12-1:0]	pwm1_cfg;
 	wire [1-1:0]	pwm0_inv;
 	wire [1-1:0]	pwm1_inv;
+	wire [12-1:0]	pwm0_cfg;
+	wire [12-1:0]	pwm1_cfg;
 	wire [8-1:0]	pwm_dt;
 	wire [16-1:0]	pwm_fault_clr;
 	wire [1-1:0]	pwm_dt_en;
@@ -84,21 +84,21 @@ module AUCOHL_TMR32_APB#(
 
 	reg [32-1:0]	RELOAD_REG;
 	assign	tmr_reload = RELOAD_REG;
-	`APB_REG(RELOAD_REG, 0, 32)
+	`AHBL_REG(RELOAD_REG, 0, 32)
 
 	reg [PRW-1:0]	PR_REG;
 	assign	prescaler = PR_REG;
-	`APB_REG(PR_REG, 'h0, PRW)
+	`AHBL_REG(PR_REG, 'h0, PRW)
 
 	reg [32-1:0]	CMPX_REG;
 	assign	cmpx = CMPX_REG;
-	`APB_REG(CMPX_REG, 0, 32)
+	`AHBL_REG(CMPX_REG, 0, 32)
 
 	reg [32-1:0]	CMPY_REG;
 	assign	cmpy = CMPY_REG;
-	`APB_REG(CMPY_REG, 0, 32)
+	`AHBL_REG(CMPY_REG, 0, 32)
 
-	reg [7-1:0]	CTRL_REG;
+	reg [5-1:0]	CTRL_REG;
 	assign	tmr_en	=	CTRL_REG[0 : 0];
 	assign	tmr_start	=	CTRL_REG[1 : 1];
 	assign	pwm0_en	=	CTRL_REG[2 : 2];
@@ -106,31 +106,31 @@ module AUCOHL_TMR32_APB#(
 	assign	pwm_dt_en	=	CTRL_REG[4 : 4];
 	assign	pwm0_inv	=	CTRL_REG[5 : 5];
 	assign	pwm1_inv	=	CTRL_REG[6 : 6];
-	`APB_REG(CTRL_REG, 0, 7)
+	`AHBL_REG(CTRL_REG, 0, 5)
 
 	reg [3-1:0]	CFG_REG;
 	assign	tmr_cfg = CFG_REG;
-	`APB_REG(CFG_REG, 0, 3)
+	`AHBL_REG(CFG_REG, 0, 3)
 
 	reg [12-1:0]	PWM0CFG_REG;
 	assign	pwm0_cfg = PWM0CFG_REG;
-	`APB_REG(PWM0CFG_REG, 0, 12)
+	`AHBL_REG(PWM0CFG_REG, 0, 12)
 
 	reg [16-1:0]	PWM1CFG_REG;
 	assign	pwm1_cfg = PWM1CFG_REG;
-	`APB_REG(PWM1CFG_REG, 0, 16)
+	`AHBL_REG(PWM1CFG_REG, 0, 16)
 
 	reg [8-1:0]	PWMDT_REG;
 	assign	pwm_dt = PWMDT_REG;
-	`APB_REG(PWMDT_REG, 0, 8)
+	`AHBL_REG(PWMDT_REG, 0, 8)
 
 	reg [2:0] IM_REG;
 	reg [2:0] IC_REG;
 	reg [2:0] RIS_REG;
 
-	`APB_MIS_REG(3)
-	`APB_REG(IM_REG, 0, 3)
-	`APB_IC_REG(3)
+	`AHBL_MIS_REG(3)
+	`AHBL_REG(IM_REG, 0, 3)
+	`AHBL_IC_REG(3)
 
 	wire [0:0] TO = timeout_flag;
 	wire [0:0] MX = matchx_flag;
@@ -138,7 +138,7 @@ module AUCOHL_TMR32_APB#(
 
 
 	integer _i_;
-	`APB_BLOCK(RIS_REG, 0) else begin
+	`AHBL_BLOCK(RIS_REG, 0) else begin
 		for(_i_ = 0; _i_ < 1; _i_ = _i_ + 1) begin
 			if(IC_REG[_i_]) RIS_REG[_i_] <= 1'b0; else if(TO[_i_ - 0] == 1'b1) RIS_REG[_i_] <= 1'b1;
 		end
@@ -166,10 +166,10 @@ module AUCOHL_TMR32_APB#(
 		.cmpy(cmpy),
 		.prescaler(prescaler),
 		.tmr_cfg(tmr_cfg),
-		.pwm0_cfg(pwm0_cfg),
-		.pwm1_cfg(pwm1_cfg),
 		.pwm0_inv(pwm0_inv),
 		.pwm1_inv(pwm1_inv),
+		.pwm0_cfg(pwm0_cfg),
+		.pwm1_cfg(pwm1_cfg),
 		.pwm_dt(pwm_dt),
 		.pwm_fault_clr(pwm_fault_clr),
 		.pwm_dt_en(pwm_dt_en),
@@ -182,23 +182,23 @@ module AUCOHL_TMR32_APB#(
 		.pwm_fault(pwm_fault)
 	);
 
-	assign	PRDATA = 
-			(PADDR[`APB_AW-1:0] == TMR_REG_OFFSET)	? TMR_WIRE :
-			(PADDR[`APB_AW-1:0] == RELOAD_REG_OFFSET)	? RELOAD_REG :
-			(PADDR[`APB_AW-1:0] == PR_REG_OFFSET)	? PR_REG :
-			(PADDR[`APB_AW-1:0] == CMPX_REG_OFFSET)	? CMPX_REG :
-			(PADDR[`APB_AW-1:0] == CMPY_REG_OFFSET)	? CMPY_REG :
-			(PADDR[`APB_AW-1:0] == CTRL_REG_OFFSET)	? CTRL_REG :
-			(PADDR[`APB_AW-1:0] == CFG_REG_OFFSET)	? CFG_REG :
-			(PADDR[`APB_AW-1:0] == PWM0CFG_REG_OFFSET)	? PWM0CFG_REG :
-			(PADDR[`APB_AW-1:0] == PWM1CFG_REG_OFFSET)	? PWM1CFG_REG :
-			(PADDR[`APB_AW-1:0] == PWMDT_REG_OFFSET)	? PWMDT_REG :
-			(PADDR[`APB_AW-1:0] == IM_REG_OFFSET)	? IM_REG :
-			(PADDR[`APB_AW-1:0] == MIS_REG_OFFSET)	? MIS_REG :
-			(PADDR[`APB_AW-1:0] == RIS_REG_OFFSET)	? RIS_REG :
-			(PADDR[`APB_AW-1:0] == IC_REG_OFFSET)	? IC_REG :
+	assign	HRDATA = 
+			(last_HADDR[`AHBL_AW-1:0] == TMR_REG_OFFSET)	? TMR_WIRE :
+			(last_HADDR[`AHBL_AW-1:0] == RELOAD_REG_OFFSET)	? RELOAD_REG :
+			(last_HADDR[`AHBL_AW-1:0] == PR_REG_OFFSET)	? PR_REG :
+			(last_HADDR[`AHBL_AW-1:0] == CMPX_REG_OFFSET)	? CMPX_REG :
+			(last_HADDR[`AHBL_AW-1:0] == CMPY_REG_OFFSET)	? CMPY_REG :
+			(last_HADDR[`AHBL_AW-1:0] == CTRL_REG_OFFSET)	? CTRL_REG :
+			(last_HADDR[`AHBL_AW-1:0] == CFG_REG_OFFSET)	? CFG_REG :
+			(last_HADDR[`AHBL_AW-1:0] == PWM0CFG_REG_OFFSET)	? PWM0CFG_REG :
+			(last_HADDR[`AHBL_AW-1:0] == PWM1CFG_REG_OFFSET)	? PWM1CFG_REG :
+			(last_HADDR[`AHBL_AW-1:0] == PWMDT_REG_OFFSET)	? PWMDT_REG :
+			(last_HADDR[`AHBL_AW-1:0] == IM_REG_OFFSET)	? IM_REG :
+			(last_HADDR[`AHBL_AW-1:0] == MIS_REG_OFFSET)	? MIS_REG :
+			(last_HADDR[`AHBL_AW-1:0] == RIS_REG_OFFSET)	? RIS_REG :
+			(last_HADDR[`AHBL_AW-1:0] == IC_REG_OFFSET)	? IC_REG :
 			32'hDEADBEEF;
 
-	assign	PREADY = 1'b1;
+	assign	HREADYOUT = 1'b1;
 
 endmodule
