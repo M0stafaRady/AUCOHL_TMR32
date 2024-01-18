@@ -1,6 +1,23 @@
 info:
   name: AUCOHL_TMR32
-  description: General purpose 32-bit Timer and PWM generator
+  description: " 
+A 32-bit timer and PWM generator with the following features:
+
+- 32-bit prescaler.
+
+- Up Counting, Down Counting and Up/Down Counting.
+
+- One-shot and Periodic.
+
+- Two independent PWM channels with two compare registers.
+
+- Optional PWM signal inversion.
+
+- Configurable PWM dead time/band to generate PWM signals such as those required by a half-H bridge driver.
+
+- Fault handeling.
+
+  "
   repo: https://github.com/shalan/AUCOHL_TMR32.git
   owner: AUCOHL
   license: APACHE 2.0
