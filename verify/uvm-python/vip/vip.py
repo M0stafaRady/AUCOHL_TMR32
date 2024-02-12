@@ -159,22 +159,11 @@ class tmr32_VIP(VIP):
             dir = self.regs.read_reg_value("CFG") & 0b11
             action_length = [compare_vals["CMPX"], compare_vals["CMPY"] - compare_vals["CMPX"], compare_vals["RELOAD"] - compare_vals["CMPY"] ]
             uvm_info(self.tag, f"actions values {name}: {actions}", UVM_MEDIUM)
-            # if dir in [0b10, 0b11]: # up or periodic 
-            #     action_length += action_length[::-1]
-            #     action_length = [val * clk_div for val in action_length]
-            #     actions = [(actions_types[type], action_length[index]) for index, type in enumerate(actions)]
-            #     if dir != 0b11: # not periodic add small trasition
-            #         actions = actions[:3] + [(actions[3][0], clk_div)]
-            # else: # down 
-            #     action_length = action_length[::-1]
-            #     action_length = [val * clk_div for val in action_length] + [clk_div]
-            #     actions = [actions[3], actions[4], actions[5], actions[0]]  #E3, E4, E5,E0
-            #     actions = [(actions_types[type], action_length[index]) for index, type in enumerate(actions)]
-            # uvm_info(self.tag, f"actions with lengths {name}: {actions}", UVM_MEDIUM)
             if dir == 0b11: # periodic 
                 action_length += action_length[::-1] # add the other direction            
             elif dir == 0b10: #up
                 action_length = action_length + [1] # this 1 is the cycles needed to go from top value to 0
+                actions = actions[:4]
             else: # down
                 action_length = action_length[::-1] + [1] # this 1 is the cycles needed to go from 0 to top value 
                 actions = [actions[3], actions[4], actions[5], actions[0]]  #E3, E4, E5,E0

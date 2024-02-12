@@ -19,6 +19,7 @@ class tmr32_monitor(ip_monitor):
         sample_pwmB = await cocotb.start(self.sample_pwmB())
         await Combine(sample_pwmA, sample_pwmB)
 
+    
     async def sample_pwmA(self):
         # ignore first 3 edges to wait for pattern to be stable 
         for _ in range(3):
@@ -44,30 +45,30 @@ class tmr32_monitor(ip_monitor):
                         uvm_info(self.tag, f"count_sum: {count_sum} max_count: {max_count} pattern numbers {len(pattern_int)}", UVM_LOW)
                         extracted_pattern = self.find_repeating_pattern(pattern_int)
                         if extracted_pattern is not None:
-                            uvm_info(self.tag, f"sampled PWM A pattern:  {pattern_int} pattern extracted: {extracted_pattern} sum cycles {sum(cycle[1] for cycle in extracted_pattern)}", UVM_LOW)
+                            uvm_info(self.tag, f"sampled PWM 0 pattern:  {pattern_int} pattern extracted: {extracted_pattern} sum cycles {sum(cycle[1] for cycle in extracted_pattern)}", UVM_LOW)
                         else:
-                            uvm_info(self.tag, f"sampled PWM A pattern:  {pattern_int} pattern extracted: {extracted_pattern}", UVM_LOW)
+                            uvm_info(self.tag, f"sampled PWM 0 pattern:  {pattern_int} pattern extracted: {extracted_pattern}", UVM_LOW)
                     else:
-                        uvm_info(self.tag, f"sampled PWM A pattern:  {pattern_int}", UVM_LOW)
+                        uvm_info(self.tag, f"sampled PWM 0 pattern:  {pattern_int}", UVM_LOW)
                 else:
                     count += 1
                     count_sum += 1
-        
+
             tr = tmr32_item.type_id.create("tr", self)
             tr.pattern = extracted_pattern
             tr.source = tmr32_item.pwm0
             self.monitor_port.write(tr)
-            uvm_info(self.tag, "sampled PWM A transaction: " + tr.convert2string(), UVM_LOW)
+            uvm_info(self.tag, "sampled PWM 0 transaction: " + tr.convert2string(), UVM_LOW)
 
     async def sample_pwmB(self):
         for _ in range(3):
-            await Edge(self.vif.pwm0)
+            await Edge(self.vif.pwm1)
         while True:
             await Edge(self.vif.pwm1)
             old_val = self.vif.pwm1.value
             count = 0
             pattern_int = []
-            clk_div = self.regs.read_reg_value("PR") * 2
+            clk_div = self.regs.read_reg_value("PR") + 1 
             max_count = 0xFF * clk_div * 10  # large possible value for top * number of div cycles * 5
             count_sum = 0
             extracted_pattern = None
@@ -79,15 +80,15 @@ class tmr32_monitor(ip_monitor):
                     old_val = self.vif.pwm1.value
                     count = 1
                     count_sum += 1
-                    if len(pattern_int) > 6 * 5 or count_sum >= max_count:
+                    if len(pattern_int) > 40 or count_sum >= max_count:
                         uvm_info(self.tag, f"count_sum: {count_sum} max_count: {max_count} pattern numbers {len(pattern_int)}", UVM_LOW)
                         extracted_pattern = self.find_repeating_pattern(pattern_int)
                         if extracted_pattern is not None:
-                            uvm_info(self.tag, f"sampled PWM B pattern:  {pattern_int} pattern extracted: {extracted_pattern} sum cycles {sum(cycle[1] for cycle in extracted_pattern)}", UVM_LOW)
+                            uvm_info(self.tag, f"sampled PWM 1 pattern:  {pattern_int} pattern extracted: {extracted_pattern} sum cycles {sum(cycle[1] for cycle in extracted_pattern)}", UVM_LOW)
                         else:
-                            uvm_info(self.tag, f"sampled PWM B pattern:  {pattern_int} pattern extracted: {extracted_pattern}", UVM_LOW)
+                            uvm_info(self.tag, f"sampled PWM 1 pattern:  {pattern_int} pattern extracted: {extracted_pattern}", UVM_LOW)
                     else:
-                        uvm_info(self.tag, f"sampled PWM B pattern:  {pattern_int}", UVM_LOW)
+                        uvm_info(self.tag, f"sampled PWM 1 pattern:  {pattern_int}", UVM_LOW)
                 else:
                     count += 1
                     count_sum += 1
@@ -96,7 +97,7 @@ class tmr32_monitor(ip_monitor):
             tr.pattern = extracted_pattern
             tr.source = tmr32_item.pwm1
             self.monitor_port.write(tr)
-            uvm_info(self.tag, "sampled PWM A transaction: " + tr.convert2string(), UVM_LOW)
+            uvm_info(self.tag, "sampled PWM 0 transaction: " + tr.convert2string(), UVM_LOW)
 
     def find_repeating_pattern(self, lst):
         n = len(lst)

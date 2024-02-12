@@ -21,13 +21,13 @@ class pwmA_try(wrapper_seq_base):
         # enable control
         await self.send_req(is_write=True, reg="PR", data_condition=lambda data: data < 4)
         await self.send_req(is_write=True, reg="RELOAD", data_condition=lambda data: data == three_rand[2])
-        await self.send_req(is_write=True, reg="CFG", data_condition=lambda data: data >> 2 == 0b1 and data & 0b11 == 1) # has to be periodic
+        await self.send_req(is_write=True, reg="CFG", data_condition=lambda data: data >> 2 == 0b1 and data & 0b11 != 0) # has to be periodic
         await self.send_req(is_write=True, reg="PWM0CFG", data_condition=lambda data: data & 0b11 in [0b10, 0b01]) # should start with high or low not realistic to start with no change or invert
         await self.send_req(is_write=True, reg="PWM1CFG", data_condition=lambda data: data & 0b11 in [0b10, 0b01])
         await self.send_req(is_write=True, reg="CMPX", data_condition=lambda data: data == three_rand[0])
         await self.send_req(is_write=True, reg="CMPY", data_condition=lambda data: data == three_rand[1])
         await self.send_req(is_write=True, reg="CTRL", data_condition=lambda data: data & 0b11111 == 0b1111)
-        await self.send_req(is_write=True, reg="CTRL", data_condition=lambda data: data & 0b11111 == 0b1101)
+        await self.send_req(is_write=True, reg="CTRL", data_condition=lambda data: data & 0b11111 == 0b1101) # restart
         await Timer(11500, "ns")
         # await self.send_req(is_write=True, reg="GENA")
         await Timer(515500, "ns")
