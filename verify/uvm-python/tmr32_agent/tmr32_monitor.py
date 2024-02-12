@@ -60,10 +60,8 @@ class tmr32_monitor(ip_monitor):
             uvm_info(self.tag, "sampled PWM A transaction: " + tr.convert2string(), UVM_LOW)
 
     async def sample_pwmB(self):
-        return
-        # wait until clk isn't 0
-        while self.regs.read_reg_value("CTRL") == 0:
-            await ClockCycles(self.vif.PCLK, 1)
+        for _ in range(3):
+            await Edge(self.vif.pwm0)
         while True:
             await Edge(self.vif.pwm1)
             old_val = self.vif.pwm1.value
