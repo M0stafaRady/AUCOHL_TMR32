@@ -7,7 +7,7 @@ from uvm.base.uvm_config_db import UVMConfigDb
 from uvm.tlm1.uvm_analysis_port import UVMAnalysisExport
 from EF_UVM.vip.vip import VIP
 from EF_UVM.wrapper_env.wrapper_item import wrapper_bus_item
-from tmr32_item.tmr32_item import tmr32_item
+from tmr32_item.tmr32_item import tmr32_pwm_item
 
 
 class tmr32_VIP(VIP):
@@ -39,10 +39,11 @@ class tmr32_VIP(VIP):
     def write_ip(self, tr):
         uvm_info(self.tag, "ip Vip write: " + tr.convert2string(), UVM_MEDIUM)
         # when monitor detect patterns the vip should also send pattern
-        td = tmr32_item.type_id.create("td", self)
-        td.source = tr.source
-        td.pattern = self.generate_patterns(tr.source)
-        self.ip_export.write(td)
+        if type(tr) is tmr32_pwm_item:
+            td = tmr32_pwm_item.type_id.create("td", self)
+            td.source = tr.source
+            td.pattern = self.generate_patterns(tr.source)
+            self.ip_export.write(td)
 
     def generate_patterns(self, source):
         def merge_similar(pattern1):
@@ -178,14 +179,14 @@ class tmr32_VIP(VIP):
                 pattern = [(1 - pulse_type, cycles) for pulse_type, cycles in pattern]
             return pattern
 
-        if source == tmr32_item.pwm0:
+        if source == tmr32_pwm_item.pwm0:
             # check if pwm0 is disabled don't send patterns
             if self.regs.read_reg_value("CTRL") & 0b100 != 0b100:
                 return None
             actions = [(self.regs.read_reg_value("PWM0CFG") >> i) & 0b11 for i in range(0, 12, 2)]
             is_inverted = (self.regs.read_reg_value("CTRL") >> 5) & 0b1
             return process_action(actions, is_inverted)
-        elif source == tmr32_item.pwm1:
+        elif source == tmr32_pwm_item.pwm1:
             if self.regs.read_reg_value("CTRL") & 0b1000 != 0b1000:
                 return None
             actions = [(self.regs.read_reg_value("PWM1CFG") >> i) & 0b11 for i in range(0, 12, 2)]

@@ -31,7 +31,8 @@ from EF_UVM.ip_env.ip_coverage.ip_coverage import ip_coverage
 from tmr32_coverage.tmr32_coverage import tmr32_coverage
 from EF_UVM.ip_env.ip_logger.ip_logger import ip_logger
 from tmr32_logger.tmr32_logger import tmr32_logger
-
+from EF_UVM.scoreboard import scoreboard
+from tmr32_scoreboard import tmr32_scoreboard
 # import cProfile
 # import pstats
 
@@ -53,7 +54,7 @@ async def module_top(dut):
     UVMConfigDb.set(None, "*", "wrapper_regs", regs)
     UVMConfigDb.set(None, "*", "irq_exist", regs.get_irq_exist())
     UVMConfigDb.set(None, "*", "insert_glitches", False)
-    UVMConfigDb.set(None, "*", "collect_coverage", False)
+    UVMConfigDb.set(None, "*", "collect_coverage", True)
     UVMConfigDb.set(None, "*", "disable_logger", False)
     test_path = []
     UVMRoot().clp.get_arg_values("+TEST_PATH=", test_path)
@@ -82,7 +83,7 @@ class base_test(UVMTest):
         self.set_type_override_by_type(VIP.get_type(), tmr32_VIP.get_type())
         self.set_type_override_by_type(ip_coverage.get_type(), tmr32_coverage.get_type())
         self.set_type_override_by_type(ip_logger.get_type(), tmr32_logger.get_type())
-        # self.set_type_override_by_type(ip_item.get_type(),tmr32_item.get_type())
+        self.set_type_override_by_type(scoreboard.get_type(), tmr32_scoreboard.get_type())
         # Enable transaction recording for everything
         UVMConfigDb.set(self, "*", "recording_detail", UVM_FULL)
         # Create the tb

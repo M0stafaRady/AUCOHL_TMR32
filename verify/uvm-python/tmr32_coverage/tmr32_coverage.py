@@ -15,5 +15,7 @@ class tmr32_coverage(ip_coverage):
     def __init__(self, name="tmr32_coverage", parent=None):
         super().__init__(name, parent)
 
+    def write(self, tr):
+        pass
 
 uvm_component_utils(tmr32_coverage)

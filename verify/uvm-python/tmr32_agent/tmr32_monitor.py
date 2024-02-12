@@ -3,7 +3,7 @@ from uvm.comps.uvm_monitor import UVMMonitor
 from uvm.tlm1.uvm_analysis_port import UVMAnalysisPort
 from uvm.base.uvm_config_db import UVMConfigDb
 from cocotb.triggers import Timer, ClockCycles, FallingEdge, Event, RisingEdge, Combine, First, Edge
-from tmr32_item.tmr32_item import tmr32_item
+from tmr32_item.tmr32_item import tmr32_pwm_item, tmr32_tmr_item
 from uvm.base.uvm_object_globals import UVM_HIGH, UVM_LOW, UVM_MEDIUM
 import cocotb
 import math
@@ -15,11 +15,18 @@ class tmr32_monitor(ip_monitor):
         super().__init__(name, parent)
 
     async def run_phase(self, phase):
-        sample_pwmA = await cocotb.start(self.sample_pwmA())
-        sample_pwmB = await cocotb.start(self.sample_pwmB())
-        await Combine(sample_pwmA, sample_pwmB)
+        sample_pwm0 = await cocotb.start(self.sample_pwmA())
+        sample_pwm1 = await cocotb.start(self.sample_pwmB())
+        timeout = await cocotb.start(self.watch_timeout_flag())
+        await Combine(sample_pwm0, sample_pwm1, timeout)
 
-    
+    async def watch_timeout_flag(self):
+        while True:
+            await RisingEdge(self.vif.timeout_flag)
+            tr = tmr32_tmr_item.type_id.create("tr", self)
+            tr.timeout = cocotb.utils.get_sim_time(units='ns')
+            self.monitor_port.write(tr)
+
     async def sample_pwmA(self):
         # ignore first 3 edges to wait for pattern to be stable 
         for _ in range(3):
@@ -29,7 +36,7 @@ class tmr32_monitor(ip_monitor):
             old_val = self.vif.pwm0.value
             count = 0
             pattern_int = []
-            clk_div = self.regs.read_reg_value("PR") +1
+            clk_div = self.regs.read_reg_value("PR") + 1
             max_count = 0xFF * clk_div * 10  # large possible value for top * number of div cycles * 5
             count_sum = 0
             extracted_pattern = None
@@ -54,9 +61,9 @@ class tmr32_monitor(ip_monitor):
                     count += 1
                     count_sum += 1
 
-            tr = tmr32_item.type_id.create("tr", self)
+            tr = tmr32_pwm_item.type_id.create("tr", self)
             tr.pattern = extracted_pattern
-            tr.source = tmr32_item.pwm0
+            tr.source = tmr32_pwm_item.pwm0
             self.monitor_port.write(tr)
             uvm_info(self.tag, "sampled PWM 0 transaction: " + tr.convert2string(), UVM_LOW)
 
@@ -93,9 +100,9 @@ class tmr32_monitor(ip_monitor):
                     count += 1
                     count_sum += 1
         
-            tr = tmr32_item.type_id.create("tr", self)
+            tr = tmr32_pwm_item.type_id.create("tr", self)
             tr.pattern = extracted_pattern
-            tr.source = tmr32_item.pwm1
+            tr.source = tmr32_pwm_item.pwm1
             self.monitor_port.write(tr)
             uvm_info(self.tag, "sampled PWM 0 transaction: " + tr.convert2string(), UVM_LOW)
 
