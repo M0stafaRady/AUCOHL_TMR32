@@ -19,6 +19,7 @@ from uvm.base import UVMRoot
 # seq
 from EF_UVM.wrapper_env.wrapper_seq_lib.write_read_regs import write_read_regs
 from tmr32_seq_lib.pwmA_try import pwmA_try
+from tmr32_seq_lib.timer_val import timer_val
 
 # override classes
 from EF_UVM.ip_env.ip_agent.ip_driver import ip_driver
@@ -104,7 +105,7 @@ class base_test(UVMTest):
             uvm_fatal("NOVIF", "Could not get wrapper_bus_if from config DB")
         # set max number of uvm errors
         server = UVMReportServer()
-        server.set_max_quit_count(10)
+        server.set_max_quit_count(5)
         UVMCoreService.get().set_report_server(server)
 
 
@@ -153,3 +154,18 @@ class tmr32_Try(base_test):
 
 uvm_component_utils(tmr32_Try)
 
+
+class time_val_test(base_test):
+    def __init__(self, name="tmr32_Try", parent=None):
+        super().__init__(name, parent)
+        self.tag = name
+
+    async def run_phase(self, phase):
+        uvm_info(self.tag, f"Starting test {self.__class__.__name__}", UVM_LOW)
+        phase.raise_objection(self, f"{self.__class__.__name__} OBJECTED")
+        wrapper_seq = timer_val("timer_val")
+        await wrapper_seq.start(self.wrapper_sqr)
+        phase.drop_objection(self, f"{self.__class__.__name__} drop objection")
+
+
+uvm_component_utils(time_val_test)

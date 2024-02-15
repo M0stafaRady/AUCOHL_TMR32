@@ -24,7 +24,7 @@ class tmr32_scoreboard(scoreboard):
             self.q_tmr.put_nowait(tr)
         elif type(tr) is tmr32_pwm_item:
             self.q_pwm.put(tr)
-            
+
     def write_ip_vip(self, tr):
         uvm_info(self.tag, "write_ip_vip: " + tr.convert2string(), UVM_MEDIUM)
         if type(tr) is tmr32_tmr_item:
@@ -36,7 +36,7 @@ class tmr32_scoreboard(scoreboard):
         pwm = await cocotb.start(self.checker_pwm())
         tmr = await cocotb.start(self.checker_tmr())
         await Combine(pwm, tmr)
-    
+
     async def checker_pwm(self):
         while True:
             val = await self.q_pwm.get()
@@ -46,8 +46,8 @@ class tmr32_scoreboard(scoreboard):
 
     async def checker_tmr(self):
         while True:
-            val = await self.q_pwm.get()
-            exp = await self.q_pwm_vip.get()
+            val = await self.q_tmr.get()
+            exp = await self.q_tmr_vip.get()
             if not val.do_compare(exp):
                 uvm_error(self.tag, "IP mismatch: " + val.convert2string() + " != " + exp.convert2string())
 

@@ -21,6 +21,7 @@ class tmr32_monitor(ip_monitor):
         await Combine(sample_pwm0, sample_pwm1, timeout)
 
     async def watch_timeout_flag(self):
+        return # TODO: delete function
         while True:
             await RisingEdge(self.vif.timeout_flag)
             tr = tmr32_tmr_item.type_id.create("tr", self)

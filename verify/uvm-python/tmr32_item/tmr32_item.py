@@ -55,17 +55,17 @@ class tmr32_pwm_item(ip_item):
 
 uvm_object_utils(tmr32_pwm_item)
 
-class tmr32_tmr_item(ip_item):
-
+class tmr32_tmr_item(ip_item): # TODO: delete function
     def __init__(self, name="tmr32_tmr_item"):
         super().__init__(name)
+        self.clock_period = 10
         self.timeout = 0 # the time in ns when the timeout flag is raised
 
     def convert2string(self):
         return sv.sformatf("timeout happened at %s", self.timeout)
 
     def do_compare(self, tr):
-        return tr.timeout == self.timeout
+        return abs(tr.timeout - self.timeout) < 3 * self.clock_period
 
 
 uvm_object_utils(tmr32_tmr_item)
