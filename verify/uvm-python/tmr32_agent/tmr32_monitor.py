@@ -34,7 +34,7 @@ class tmr32_monitor(ip_monitor):
             while extracted_pattern is None:
                 # start detect pattern
                 await RisingEdge(self.vif.PCLK)
-                if old_val != signal.value or count_sum == max_count:
+                if old_val != signal.value:
                     pattern_int.append((old_val, count))
                     old_val = signal.value
                     count = 1
@@ -56,7 +56,7 @@ class tmr32_monitor(ip_monitor):
             tr.pattern = extracted_pattern
             self.monitor_port.write(tr)
             uvm_info(self.tag, "sampled {source} transaction: " + tr.convert2string(), UVM_LOW)
-    
+
     def find_repeating_pattern(self, lst):
         n = len(lst)
         if n < 2:

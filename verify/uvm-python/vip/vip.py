@@ -27,12 +27,16 @@ class tmr32_VIP(VIP):
         self.bus_write_event = Event("bus_write_event")
         self.clock_period = 10
 
-
     async def run_phase(self, phase):
         super().run_phase(phase)
-        await self.timer()
+        while True:
+            await self.wait_start_counting()
+            timer_fork = await cocotb.start(self.timer())
+            await self.wait_for_stop_counting()
+            timer_fork.kill()
+
     def write_bus(self, tr):
-        uvm_info(self.tag, "Vip write: " + tr.convert2string(), UVM_MEDIUM)
+        uvm_info(self.tag, "Vip write: " + tr.convert2string(), UVM_HIGH)
         if tr.reset:
             self.wrapper_bus_export.write(tr)
             return
@@ -48,23 +52,21 @@ class tmr32_VIP(VIP):
         self.bus_write_event.clear()
 
     def write_ip(self, tr):
-        uvm_info(self.tag, "ip Vip write: " + tr.convert2string(), UVM_MEDIUM)
+        uvm_info(self.tag, "ip Vip write: " + tr.convert2string(), UVM_HIGH)
         # when monitor detect patterns the vip should also send pattern
-        if type(tr) is tmr32_pwm_item:
-            td = tmr32_pwm_item.type_id.create("td", self)
-            td.source = tr.source
-            td.pattern = self.generate_patterns(tr.source)
-            self.ip_export.write(td)
+        td = tmr32_pwm_item.type_id.create("td", self)
+        td.source = tr.source
+        td.pattern = self.generate_patterns(tr.source)
+        self.ip_export.write(td)
 
     async def timer(self):
-        await self.wait_start_counting()
         mode = self.regs.read_reg_value("CFG") & 0b11
         PR = self.regs.read_reg_value("PR")
-        uvm_info(self.tag, f"function timer mode = {bin(mode)} and PR = {bin(PR)}", UVM_MEDIUM)
+        uvm_info(self.tag, f"function timer mode = {bin(mode)} and PR = {bin(PR)}", UVM_HIGH)
         counter = 0 if self.regs.read_reg_value("CFG") & 0b10 == 0b10 else self.regs.read_reg_value("RELOAD") # 0 counting up or up/down reload count down
         count_step = (self.regs.read_reg_value("PR") + 1) * self.clock_period
         count_type = "up" if self.regs.read_reg_value("CFG") & 0b10 == 0b10 else "down"
-        uvm_info(self.tag, f"count_step: {count_step}, count_type: {count_type}", UVM_MEDIUM)
+        uvm_info(self.tag, f"count_step: {count_step}, count_type: {count_type}", UVM_HIGH)
         if PR <= 2 and mode in [0b01, 0b10]:
             await Timer(self.clock_period * 2, 'ns')
         self.regs.write_reg_value("TMR", counter, force_write=True)
@@ -104,7 +106,7 @@ class tmr32_VIP(VIP):
         #     await self.bus_write_event.wait()
 
     async def wait_for_stop_counting(self):
-        while self.regs.read_reg_value("CTRL") & 0b11 != 0b01:  # wait until timer restarted
+        while self.regs.read_reg_value("CTRL") & 0b11 != 0b00:  # wait until timer restarted
             await self.bus_write_event.wait()
 
     def calculate_timeout_cycles(self):
@@ -226,13 +228,13 @@ class tmr32_VIP(VIP):
             clk_div = self.regs.read_reg_value("PR") + 1
             dir = self.regs.read_reg_value("CFG") & 0b11
             mode = self.regs.read_reg_value("CFG") >> 2  # 1 periodic and 0 oneshot
-            if mode == 0: # when oneshot mode the pwm would be generted if the last action is inverted rather than that there would not be a pattern
+            if mode == 0:  # when oneshot mode the pwm would be generted if the last action is inverted rather than that there would not be a pattern
                 return [(1, clk_div), (0, clk_div)]
             action_length = [compare_vals["CMPX"], compare_vals["CMPY"] - compare_vals["CMPX"], compare_vals["RELOAD"] - compare_vals["CMPY"] ]
             uvm_info(self.tag, f"actions values {name}: {actions}", UVM_MEDIUM)
-            if dir == 0b11: # periodic 
+            if dir == 0b11:  # periodic 
                 action_length += action_length[::-1] # add the other direction            
-            elif dir == 0b10: #up
+            elif dir == 0b10:  # up
                 action_length = action_length + [1] # this 1 is the cycles needed to go from top value to 0
                 actions = actions[:4]
             else: # down

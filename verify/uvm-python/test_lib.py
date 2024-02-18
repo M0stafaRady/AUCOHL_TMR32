@@ -19,7 +19,7 @@ from uvm.base import UVMRoot
 # seq
 from EF_UVM.wrapper_env.wrapper_seq_lib.write_read_regs import write_read_regs
 from tmr32_seq_lib.pwmA_try import pwmA_try
-from tmr32_seq_lib.timer_val import timer_val
+from tmr32_seq_lib.timer_vary import timer_vary
 
 # override classes
 from EF_UVM.ip_env.ip_agent.ip_driver import ip_driver
@@ -33,6 +33,8 @@ from tmr32_coverage.tmr32_coverage import tmr32_coverage
 from EF_UVM.ip_env.ip_logger.ip_logger import ip_logger
 from tmr32_logger.tmr32_logger import tmr32_logger
 from EF_UVM.scoreboard import scoreboard
+from tmr32_coverage.tmr32_wrapper_coverage import tmr32_wrapper_coverage
+from EF_UVM.wrapper_env.wrapper_coverage.wrapper_coverage import wrapper_coverage
 # import cProfile
 # import pstats
 
@@ -83,6 +85,7 @@ class base_test(UVMTest):
         self.set_type_override_by_type(VIP.get_type(), tmr32_VIP.get_type())
         self.set_type_override_by_type(ip_coverage.get_type(), tmr32_coverage.get_type())
         self.set_type_override_by_type(ip_logger.get_type(), tmr32_logger.get_type())
+        self.set_type_override_by_type(wrapper_coverage.get_type(), tmr32_wrapper_coverage.get_type())
         # self.set_type_override_by_type(scoreboard.get_type(), tmr32_scoreboard.get_type())
         # Enable transaction recording for everything
         UVMConfigDb.set(self, "*", "recording_detail", UVM_FULL)
@@ -154,7 +157,7 @@ class tmr32_Try(base_test):
 uvm_component_utils(tmr32_Try)
 
 
-class time_val_test(base_test):
+class time_vary_test(base_test):
     def __init__(self, name="tmr32_Try", parent=None):
         super().__init__(name, parent)
         self.tag = name
@@ -162,9 +165,9 @@ class time_val_test(base_test):
     async def run_phase(self, phase):
         uvm_info(self.tag, f"Starting test {self.__class__.__name__}", UVM_LOW)
         phase.raise_objection(self, f"{self.__class__.__name__} OBJECTED")
-        wrapper_seq = timer_val("timer_val")
+        wrapper_seq = timer_vary("timer_vary")
         await wrapper_seq.start(self.wrapper_sqr)
         phase.drop_objection(self, f"{self.__class__.__name__} drop objection")
 
 
-uvm_component_utils(time_val_test)
+uvm_component_utils(time_vary_test)
