@@ -20,7 +20,7 @@ class timer_val(wrapper_seq_base):
         three_rand = sorted(random.sample(range(1, 0xFF), 3))
         # enable control
         # await self.send_req(is_write=True, reg="PR", data_condition=lambda data: 0 < data < 4)
-        await self.send_req(is_write=True, reg="PR", data_condition=lambda data:  0<data < 10 )
+        await self.send_req(is_write=True, reg="PR", data_condition=lambda data:  0 < data < 20 )
         await self.send_req(is_write=True, reg="RELOAD", data_condition=lambda data: data == three_rand[2])
         await self.send_req(is_write=True, reg="CFG", data_condition=lambda data: data & 0b11 != 0b0)
         await self.send_req(is_write=True, reg="CFG", data_condition=lambda data: data & 0b11 != 0b0 and data >> 2 == 0b0)
@@ -30,7 +30,7 @@ class timer_val(wrapper_seq_base):
         await self.send_req(is_write=True, reg="CMPY", data_condition=lambda data: data == three_rand[1])
         await self.send_req(is_write=True, reg="CTRL", data_condition=lambda data: data & 0b11111 == 0b1111)
         await self.send_req(is_write=True, reg="CTRL", data_condition=lambda data: data & 0b11111 == 0b1101) # restart
-        for i in range(1000):
+        for i in range(3000):
             await self.send_req(is_write=False, reg="TMR")
         # await Timer(11500, "ns")
         # await self.send_req(is_write=True, reg="GENA")
