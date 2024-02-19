@@ -2,7 +2,7 @@ from uvm.macros.uvm_message_defines import uvm_info
 from uvm.base.uvm_object_globals import UVM_HIGH, UVM_LOW
 from cocotb_coverage.coverage import CoverPoint, CoverCross
 from uvm.macros import uvm_component_utils
-from tmr32_item.tmr32_item import tmr32_item
+from tmr32_item.tmr32_item import tmr32_pwm_item
 
 
 class tmr32_cov_groups():
