@@ -39,4 +39,7 @@ end
 
 always #5 PCLK = !PCLK;
 
+// get the timeout flag as it's not output 
+wire timeout_flag = uut.timeout_flag;
+
 endmodule

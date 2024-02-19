@@ -3,15 +3,15 @@ from uvm.base.uvm_object_globals import UVM_ALL_ON, UVM_NOPACK, UVM_HIGH, UVM_ME
 from uvm.base.sv import sv
 from EF_UVM.ip_env.ip_item import ip_item
 
-class tmr32_item(ip_item):
+class tmr32_pwm_item(ip_item):
 
     pwm0 = "pwm0"
     pwm1 = "pwm1"
-    def __init__(self, name="tmr32_item"):
+    def __init__(self, name="tmr32_pwm_item"):
         super().__init__(name)
         self.pattern = []
         self._source = None
-        self.source = tmr32_item.pwm0  # source can be pwm0 or pwm1
+        self.source = tmr32_pwm_item.pwm0  # source can be pwm0 or pwm1
 
     def convert2string(self):
         return sv.sformatf("pattern %s from %s", self.pattern, self.source)
@@ -47,10 +47,11 @@ class tmr32_item(ip_item):
 
     @source.setter
     def source(self, value):
-        if value in [tmr32_item.pwm0, tmr32_item.pwm1]:
+        if value in [tmr32_pwm_item.pwm0, tmr32_pwm_item.pwm1]:
             self._source = value
         else:
             raise ValueError("source must be pwm0 or pwm1")
 
 
-uvm_object_utils(tmr32_item)
+uvm_object_utils(tmr32_pwm_item)
+

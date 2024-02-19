@@ -3,13 +3,13 @@ from uvm.macros.uvm_object_defines import uvm_object_utils
 from uvm.macros.uvm_message_defines import uvm_fatal
 from EF_UVM.wrapper_env.wrapper_item import wrapper_bus_item
 from uvm.base.uvm_config_db import UVMConfigDb
-from EF_UVM.wrapper_env.wrapper_seq_lib.wrapper_seq_base import wrapper_seq_base
 from cocotb.triggers import Timer
 from uvm.macros.uvm_sequence_defines import uvm_do_with, uvm_do
 import random
+from tmr32_seq_lib.timer_config import timer_config
 
 
-class pwmA_try(wrapper_seq_base):
+class pwmA_try(timer_config):
 
     def __init__(self, name="pwmA_try"):
         super().__init__(name)
@@ -19,7 +19,7 @@ class pwmA_try(wrapper_seq_base):
         await super().body()
         three_rand = sorted(random.sample(range(1, 0xFF), 3))
         # enable control
-        await self.send_req(is_write=True, reg="PR", data_condition=lambda data: data < 4)
+        await self.send_req(is_write=True, reg="PR", data_condition=lambda data: 0<data < 4)
         await self.send_req(is_write=True, reg="RELOAD", data_condition=lambda data: data == three_rand[2])
         await self.send_req(is_write=True, reg="CFG", data_condition=lambda data: data >> 2 == 0b1 and data & 0b11 != 0) # has to be periodic
         await self.send_req(is_write=True, reg="PWM0CFG", data_condition=lambda data: data & 0b11 in [0b10, 0b01]) # should start with high or low not realistic to start with no change or invert
