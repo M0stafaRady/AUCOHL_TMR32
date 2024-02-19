@@ -7,7 +7,8 @@ YAML_FILE = $(PWD)/../../AUCOHL_TMR32.yaml
 MAKEFLAGS += --no-print-directory
 
 # List of tests
-TESTS := tmr32_Try
+TESTS := tmr32_Try time_vary_test
+TESTS := time_vary_test
 
 # Variable for tag - set this as required
 SIM_TAG ?= default_tag

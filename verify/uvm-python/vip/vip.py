@@ -1,13 +1,16 @@
 from uvm.base.uvm_component import UVMComponent
 from uvm.macros import uvm_component_utils
 from uvm.tlm1.uvm_analysis_port import UVMAnalysisImp
-from uvm.base.uvm_object_globals import UVM_HIGH, UVM_LOW, UVM_MEDIUM 
+from uvm.base.uvm_object_globals import UVM_HIGH, UVM_LOW, UVM_MEDIUM
 from uvm.macros import uvm_component_utils, uvm_fatal, uvm_info
 from uvm.base.uvm_config_db import UVMConfigDb
 from uvm.tlm1.uvm_analysis_port import UVMAnalysisExport
 from EF_UVM.vip.vip import VIP
 from EF_UVM.wrapper_env.wrapper_item import wrapper_bus_item
-from tmr32_item.tmr32_item import tmr32_item
+from tmr32_item.tmr32_item import tmr32_pwm_item
+from EF_UVM.ip_env.ip_agent.ip_monitor import ip_monitor
+from cocotb.triggers import Timer, ClockCycles, FallingEdge, Event, RisingEdge, Combine, First
+import cocotb
 
 
 class tmr32_VIP(VIP):
@@ -21,13 +24,24 @@ class tmr32_VIP(VIP):
             uvm_fatal(self.tag, "No json file wrapper regs")
         else:
             self.regs = arr[0]
+        self.bus_write_event = Event("bus_write_event")
+        self.clock_period = 10
+
+    async def run_phase(self, phase):
+        super().run_phase(phase)
+        while True:
+            await self.wait_start_counting()
+            timer_fork = await cocotb.start(self.timer())
+            await self.wait_for_stop_counting()
+            timer_fork.kill()
 
     def write_bus(self, tr):
-        uvm_info(self.tag, "Vip write: " + tr.convert2string(), UVM_MEDIUM)
+        uvm_info(self.tag, "Vip write: " + tr.convert2string(), UVM_HIGH)
         if tr.reset:
             self.wrapper_bus_export.write(tr)
             return
         if tr.kind == wrapper_bus_item.WRITE:
+            self.bus_write_event.set()
             self.regs.write_reg_value(tr.addr, tr.data)
             self.wrapper_bus_export.write(tr)
         elif tr.kind == wrapper_bus_item.READ:
@@ -35,14 +49,70 @@ class tmr32_VIP(VIP):
             td = tr.do_clone()
             td.data = data
             self.wrapper_bus_export.write(td)
+        self.bus_write_event.clear()
 
     def write_ip(self, tr):
-        uvm_info(self.tag, "ip Vip write: " + tr.convert2string(), UVM_MEDIUM)
+        uvm_info(self.tag, "ip Vip write: " + tr.convert2string(), UVM_HIGH)
         # when monitor detect patterns the vip should also send pattern
-        td = tmr32_item.type_id.create("td", self)
+        td = tmr32_pwm_item.type_id.create("td", self)
         td.source = tr.source
         td.pattern = self.generate_patterns(tr.source)
         self.ip_export.write(td)
+
+    async def timer(self):
+        mode = self.regs.read_reg_value("CFG") & 0b11
+        PR = self.regs.read_reg_value("PR")
+        uvm_info(self.tag, f"function timer mode = {bin(mode)} and PR = {bin(PR)}", UVM_HIGH)
+        counter = 0 if self.regs.read_reg_value("CFG") & 0b10 == 0b10 else self.regs.read_reg_value("RELOAD") # 0 counting up or up/down reload count down
+        count_step = (self.regs.read_reg_value("PR") + 1) * self.clock_period
+        count_type = "up" if self.regs.read_reg_value("CFG") & 0b10 == 0b10 else "down"
+        uvm_info(self.tag, f"count_step: {count_step}, count_type: {count_type}", UVM_HIGH)
+        if PR <= 2 and mode in [0b01, 0b10]:
+            await Timer(self.clock_period * 2, 'ns')
+        self.regs.write_reg_value("TMR", counter, force_write=True)
+        uvm_info(self.tag, f"counter: {hex(counter)}", UVM_HIGH)
+        while True:
+            if count_type == "up":
+                counter += 1
+                if counter >= self.regs.read_reg_value("RELOAD"):
+                    if self.regs.read_reg_value("CFG") & 0b11 == 0b11: # mode is up/dowm
+                            count_type = "down"
+                    elif counter == self.regs.read_reg_value("RELOAD")+1:
+                        counter = 0
+                        if self.regs.read_reg_value("CFG") & 0b100 == 0b0:  # oneshot mode
+                            return
+            else:
+                counter -= 1
+                if counter <= 0:
+                    if self.regs.read_reg_value("CFG") & 0b11 == 0b11: # mode is up/dowm
+                        if self.regs.read_reg_value("CFG") & 0b100 == 0b0:  # oneshot mode
+                            if counter == -1:
+                                return
+                        else:
+                            count_type = "up"
+                    elif counter == -1:
+                        counter = self.regs.read_reg_value("RELOAD")
+                        if self.regs.read_reg_value("CFG") & 0b100 == 0b0:  # oneshot mode
+                            return
+            await Timer(count_step, 'ns')
+            self.regs.write_reg_value("TMR", counter, force_write=True)
+            uvm_info(self.tag, f"counter: {hex(counter)}", UVM_HIGH)
+
+    async def wait_start_counting(self):
+        # start counting when timer enable 1 then 0
+        while self.regs.read_reg_value("CTRL") & 0b11 != 0b11:  # wait until timer enable
+            await self.bus_write_event.wait()
+        # while self.regs.read_reg_value("CTRL") & 0b11 != 0b01:  # wait until timer restarted
+        #     await self.bus_write_event.wait()
+
+    async def wait_for_stop_counting(self):
+        while self.regs.read_reg_value("CTRL") & 0b11 != 0b00:  # wait until timer restarted
+            await self.bus_write_event.wait()
+
+    def calculate_timeout_cycles(self):
+        num_cycles = self.regs.read_reg_value("RELOAD") * (self.regs.read_reg_value("PR") + 1)
+        uvm_info(self.tag, f"[calculate_timeout_cycles] reload = {self.regs.read_reg_value('RELOAD')} and pr = {self.regs.read_reg_value('PR')}", UVM_MEDIUM)
+        return num_cycles
 
     def generate_patterns(self, source):
         def merge_similar(pattern1):
@@ -157,11 +227,14 @@ class tmr32_VIP(VIP):
             actions_types = ["no change", "low", "high", "inverted"]
             clk_div = self.regs.read_reg_value("PR") + 1
             dir = self.regs.read_reg_value("CFG") & 0b11
+            mode = self.regs.read_reg_value("CFG") >> 2  # 1 periodic and 0 oneshot
+            if mode == 0:  # when oneshot mode the pwm would be generted if the last action is inverted rather than that there would not be a pattern
+                return [(1, clk_div), (0, clk_div)]
             action_length = [compare_vals["CMPX"], compare_vals["CMPY"] - compare_vals["CMPX"], compare_vals["RELOAD"] - compare_vals["CMPY"] ]
             uvm_info(self.tag, f"actions values {name}: {actions}", UVM_MEDIUM)
-            if dir == 0b11: # periodic 
+            if dir == 0b11:  # periodic 
                 action_length += action_length[::-1] # add the other direction            
-            elif dir == 0b10: #up
+            elif dir == 0b10:  # up
                 action_length = action_length + [1] # this 1 is the cycles needed to go from top value to 0
                 actions = actions[:4]
             else: # down
@@ -178,14 +251,14 @@ class tmr32_VIP(VIP):
                 pattern = [(1 - pulse_type, cycles) for pulse_type, cycles in pattern]
             return pattern
 
-        if source == tmr32_item.pwm0:
+        if source == tmr32_pwm_item.pwm0:
             # check if pwm0 is disabled don't send patterns
             if self.regs.read_reg_value("CTRL") & 0b100 != 0b100:
                 return None
             actions = [(self.regs.read_reg_value("PWM0CFG") >> i) & 0b11 for i in range(0, 12, 2)]
             is_inverted = (self.regs.read_reg_value("CTRL") >> 5) & 0b1
             return process_action(actions, is_inverted)
-        elif source == tmr32_item.pwm1:
+        elif source == tmr32_pwm_item.pwm1:
             if self.regs.read_reg_value("CTRL") & 0b1000 != 0b1000:
                 return None
             actions = [(self.regs.read_reg_value("PWM1CFG") >> i) & 0b11 for i in range(0, 12, 2)]

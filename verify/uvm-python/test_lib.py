@@ -19,6 +19,7 @@ from uvm.base import UVMRoot
 # seq
 from EF_UVM.wrapper_env.wrapper_seq_lib.write_read_regs import write_read_regs
 from tmr32_seq_lib.pwmA_try import pwmA_try
+from tmr32_seq_lib.timer_vary import timer_vary
 
 # override classes
 from EF_UVM.ip_env.ip_agent.ip_driver import ip_driver
@@ -31,7 +32,9 @@ from EF_UVM.ip_env.ip_coverage.ip_coverage import ip_coverage
 from tmr32_coverage.tmr32_coverage import tmr32_coverage
 from EF_UVM.ip_env.ip_logger.ip_logger import ip_logger
 from tmr32_logger.tmr32_logger import tmr32_logger
-
+from EF_UVM.scoreboard import scoreboard
+from tmr32_coverage.tmr32_wrapper_coverage import tmr32_wrapper_coverage
+from EF_UVM.wrapper_env.wrapper_coverage.wrapper_coverage import wrapper_coverage
 # import cProfile
 # import pstats
 
@@ -53,7 +56,7 @@ async def module_top(dut):
     UVMConfigDb.set(None, "*", "wrapper_regs", regs)
     UVMConfigDb.set(None, "*", "irq_exist", regs.get_irq_exist())
     UVMConfigDb.set(None, "*", "insert_glitches", False)
-    UVMConfigDb.set(None, "*", "collect_coverage", False)
+    UVMConfigDb.set(None, "*", "collect_coverage", True)
     UVMConfigDb.set(None, "*", "disable_logger", False)
     test_path = []
     UVMRoot().clp.get_arg_values("+TEST_PATH=", test_path)
@@ -82,7 +85,8 @@ class base_test(UVMTest):
         self.set_type_override_by_type(VIP.get_type(), tmr32_VIP.get_type())
         self.set_type_override_by_type(ip_coverage.get_type(), tmr32_coverage.get_type())
         self.set_type_override_by_type(ip_logger.get_type(), tmr32_logger.get_type())
-        # self.set_type_override_by_type(ip_item.get_type(),tmr32_item.get_type())
+        self.set_type_override_by_type(wrapper_coverage.get_type(), tmr32_wrapper_coverage.get_type())
+        # self.set_type_override_by_type(scoreboard.get_type(), tmr32_scoreboard.get_type())
         # Enable transaction recording for everything
         UVMConfigDb.set(self, "*", "recording_detail", UVM_FULL)
         # Create the tb
@@ -103,7 +107,7 @@ class base_test(UVMTest):
             uvm_fatal("NOVIF", "Could not get wrapper_bus_if from config DB")
         # set max number of uvm errors
         server = UVMReportServer()
-        server.set_max_quit_count(10)
+        server.set_max_quit_count(5)
         UVMCoreService.get().set_report_server(server)
 
 
@@ -152,3 +156,18 @@ class tmr32_Try(base_test):
 
 uvm_component_utils(tmr32_Try)
 
+
+class time_vary_test(base_test):
+    def __init__(self, name="tmr32_Try", parent=None):
+        super().__init__(name, parent)
+        self.tag = name
+
+    async def run_phase(self, phase):
+        uvm_info(self.tag, f"Starting test {self.__class__.__name__}", UVM_LOW)
+        phase.raise_objection(self, f"{self.__class__.__name__} OBJECTED")
+        wrapper_seq = timer_vary("timer_vary")
+        await wrapper_seq.start(self.wrapper_sqr)
+        phase.drop_objection(self, f"{self.__class__.__name__} drop objection")
+
+
+uvm_component_utils(time_vary_test)
