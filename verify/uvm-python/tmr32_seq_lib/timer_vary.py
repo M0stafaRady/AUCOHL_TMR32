@@ -3,7 +3,7 @@ from uvm.macros import uvm_component_utils, uvm_fatal, uvm_info
 from uvm.macros.uvm_object_defines import uvm_object_utils
 import random
 from cocotb_coverage.coverage import coverage_db
-from uvm.base.uvm_object_globals import UVM_FULL, UVM_LOW, UVM_ERROR
+from uvm.base.uvm_object_globals import UVM_FULL, UVM_LOW, UVM_ERROR, UVM_HIGH
 
 
 class timer_vary(timer_config):
@@ -37,7 +37,7 @@ class timer_vary(timer_config):
     def get_coverage(self):
         detailed_coverage = coverage_db["top.tmr32.timer.read timer values"].detailed_coverage
         cover_percentage = coverage_db["top.tmr32.timer.read timer values"].cover_percentage
-        uvm_info(self.tag, f"cover_percentage: {cover_percentage}, detailed_coverage: {detailed_coverage}", UVM_LOW)
+        uvm_info(self.tag, f"cover_percentage: {cover_percentage}, detailed_coverage: {detailed_coverage}", UVM_HIGH)
         return detailed_coverage, cover_percentage
 
     async def config_timer_with_cond(self, is_periodic=True, dir="up counting", is_low_speed=True):

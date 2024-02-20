@@ -20,6 +20,7 @@ from uvm.base import UVMRoot
 from EF_UVM.wrapper_env.wrapper_seq_lib.write_read_regs import write_read_regs
 from tmr32_seq_lib.pwmA_try import pwmA_try
 from tmr32_seq_lib.timer_vary import timer_vary
+from tmr32_seq_lib.pwm_pr import pwm_pr
 
 # override classes
 from EF_UVM.ip_env.ip_agent.ip_driver import ip_driver
@@ -171,3 +172,20 @@ class time_vary_test(base_test):
 
 
 uvm_component_utils(time_vary_test)
+
+
+class pwm_pr_test(base_test):
+    def __init__(self, name="pwm_pr_test", parent=None):
+        super().__init__(name, parent)
+        self.tag = name
+
+    async def run_phase(self, phase):
+        uvm_info(self.tag, f"Starting test {self.__class__.__name__}", UVM_LOW)
+        phase.raise_objection(self, f"{self.__class__.__name__} OBJECTED")
+        wrapper_seq = pwm_pr()
+        wrapper_seq.monitor = self.example_tb0.ip_env.ip_agent.monitor
+        await wrapper_seq.start(self.wrapper_sqr)
+        phase.drop_objection(self, f"{self.__class__.__name__} drop objection")
+
+
+uvm_component_utils(pwm_pr_test)

@@ -13,11 +13,18 @@ from EF_UVM.ip_env.ip_agent.ip_monitor import ip_monitor
 class tmr32_monitor(ip_monitor):
     def __init__(self, name="tmr32_monitor", parent=None):
         super().__init__(name, parent)
+        self.detect_pattern_event = Event()
 
     async def run_phase(self, phase):
-        sample_pwm0 = await cocotb.start(self.sample_pwm(self.vif.pwm0, tmr32_pwm_item.pwm0))
-        sample_pwm1 = await cocotb.start(self.sample_pwm(self.vif.pwm1, tmr32_pwm_item.pwm1))
-        await Combine(sample_pwm0, sample_pwm1)
+        while True:
+            sample_pwm0 = await cocotb.start(self.sample_pwm(self.vif.pwm0, tmr32_pwm_item.pwm0))
+            sample_pwm1 = await cocotb.start(self.sample_pwm(self.vif.pwm1, tmr32_pwm_item.pwm1))
+            await self.watch_reset() # when reset kill sample
+            sample_pwm0.kill()
+            sample_pwm1.kill()
+
+    async def watch_reset(self):
+        await FallingEdge(self.vif.PRESETn)
 
     async def sample_pwm(self, signal, source):
         for _ in range(3):
@@ -55,6 +62,7 @@ class tmr32_monitor(ip_monitor):
             tr.source = source
             tr.pattern = extracted_pattern
             self.monitor_port.write(tr)
+            self.detect_pattern_event.set()
             uvm_info(self.tag, "sampled {source} transaction: " + tr.convert2string(), UVM_LOW)
 
     def find_repeating_pattern(self, lst):

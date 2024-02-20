@@ -1,12 +1,13 @@
 from uvm.seq import UVMSequence
 from uvm.macros.uvm_object_defines import uvm_object_utils
-from uvm.macros.uvm_message_defines import uvm_fatal
+from uvm.macros.uvm_message_defines import uvm_fatal, uvm_info
 from EF_UVM.wrapper_env.wrapper_item import wrapper_bus_item
 from uvm.base.uvm_config_db import UVMConfigDb
 from EF_UVM.wrapper_env.wrapper_seq_lib.wrapper_seq_base import wrapper_seq_base
 from cocotb.triggers import Timer
 from uvm.macros.uvm_sequence_defines import uvm_do_with, uvm_do
 import random
+from uvm.base.uvm_object_globals import UVM_MEDIUM, UVM_LOW, UVM_HIGH
 
 
 class timer_config(wrapper_seq_base):
@@ -21,7 +22,7 @@ class timer_config(wrapper_seq_base):
     async def read_timer_val(self):
         await self.send_req(is_write=False, reg="TMR")
     async def start_timer(self, pwm_enable=[0, 0], pwm_inverted=[0, 0]):
-        value = 0b11 | pwm_enable[0] >> 2 | pwm_enable[1] >> 3 | pwm_inverted[0] >> 5 | pwm_inverted[1] >> 6
+        value = 0b11 | pwm_enable[0] << 2 | pwm_enable[1] << 3 | pwm_inverted[0] << 5 | pwm_inverted[1] << 6
         await self.send_req(is_write=True, reg="CTRL", data_condition=lambda data: data & 0b1111111 == value)
         await self.send_req(is_write=True, reg="CTRL", data_condition=lambda data: data & 0b1111111 == value & ~(0b10)) # restart
 
@@ -41,7 +42,7 @@ class timer_config(wrapper_seq_base):
         elif is_periodic is None: 
             await self.send_req(is_write=True, reg="CFG", data_condition=lambda data: data & 0b11 == dir)
         elif dir is None:
-            await self.send_req(is_write=True, reg="CFG", data_condition=lambda data: data >> 2 == is_periodic)
+            await self.send_req(is_write=True, reg="CFG", data_condition=lambda data: data >> 2 == is_periodic and data & 0b11 != 0b0)
         else:
             await self.send_req(is_write=True, reg="CFG", data_condition=lambda data: data >> 2 == is_periodic and data & 0b11 == dir)
 
@@ -53,6 +54,7 @@ class timer_config(wrapper_seq_base):
 
     async def config_timer(self):
         await self.set_timer_pr()
+        await self.set_pwm_actions()
         await self.set_timer_mode()
         await self.config_timer_regs()
         await self.start_timer()

@@ -23,7 +23,7 @@ class tmr32_coverage(ip_coverage):
             uvm_fatal(self.tag, "No json file wrapper regs")
         else:
             regs = arr[0]
-        self.cov_groups = tmr32_cov_groups("top.ip", regs)
+        self.cov_groups = tmr32_cov_groups("top.tmr32.pwm", regs)
 
     def write(self, tr):
         self.cov_groups.ip_cov(tr)
